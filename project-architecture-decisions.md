@@ -54,8 +54,11 @@ sono i CLAUDE locali.
 ---
 
 ## Identità e packaging
-- Skill user-level: `~/.agents/skills/project-architecture/` + symlink in `~/.claude/skills/`
-  (convenzione osservata: tutte le skill dell'utente sono symlink a `../../.agents/skills/<nome>`).
+- Canonical versioned source: `project-architecture/` in this repository. The user-level
+  installation is the `~/.agents/skills/project-architecture` symlink to that source; the existing
+  `~/.claude/skills/project-architecture` symlink continues to resolve through `~/.agents/skills/`.
+  This COINE-90 decision supersedes COINE-89's unversioned real-directory installation, with the
+  user's explicit authorization on 2026-09-10.
 - `disable-model-invocation: true` — riscrive un file di progetto e chiede conferme, non deve
   partire da sola a metà di un altro lavoro.
 - SKILL.md = procedura; formato del file e checklist per stack = file di reference separati

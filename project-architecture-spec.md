@@ -171,9 +171,11 @@ This skill is the first act of retiring the `tdd-red-handoff` plugin: ownership 
 
 **Identity and packaging**
 
-- New user-level skill named `project-architecture`, living in
-  `~/.agents/skills/project-architecture/` with a symlink from `~/.claude/skills/`, matching the
-  convention every other skill on this machine follows.
+- New skill named `project-architecture`, with its canonical source in this repository at
+  `project-architecture/`. The user-level installation is a symlink at
+  `~/.agents/skills/project-architecture`; the existing `~/.claude/skills/project-architecture`
+  symlink continues to resolve through it. This supersedes COINE-89's unversioned real-directory
+  installation so COINE-90 can be committed and reviewed normally.
 - `disable-model-invocation: true` in the frontmatter. The skill rewrites a project file and asks
   for confirmations; it must never start on its own inside another task.
 - `SKILL.md` holds the procedure only. The produced-file format and the per-stack checklists live in
@@ -364,8 +366,8 @@ art to read for what to check, and a deliberate non-model for how to package the
 
 - **A validator script.** No `bin/` executable that checks the produced file. Decided explicitly;
   reopen only if manual verification proves unworkable across the three collaudo projects.
-- **Promotion to a plugin.** The skill ships user-level. The layout stays liftable, but the lift is
-  not part of this work.
+- **Promotion to a plugin.** The skill remains activated user-level from its versioned repository
+  source. The layout stays liftable, but the lift is not part of this work.
 - **A second, "deep" architecture file.** Superseded: the second level is the `CLAUDE.md` files in
   subdirectories, which the user maintains.
 - **Writing or proposing local-knowledge destinations.** The skill lists local findings and asks; it

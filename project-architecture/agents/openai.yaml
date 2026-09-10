@@ -1,0 +1,5 @@
+interface:
+  display_name: "Project Architecture"
+  short_description: "Write .ai/PROJECT_ARCHITECTURE.md for the current project"
+policy:
+  allow_implicit_invocation: false
