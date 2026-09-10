@@ -29,13 +29,68 @@ on request; the file itself stays telegraphic.
 
 ## Budget
 
-Declared in the file as `max_tokens_k=2`. Measure with `wc -c`; tokens ≈ characters / 4.
+The initial budget is declared in the file as `max_tokens_k=2`. Measure with `wc -c`; tokens ≈
+characters / 4.
 
-- Hard ceiling: **8,000 characters**.
-- Alarm: **7,200 characters** (90%). Report it; the file still ships.
+- Hard ceiling: `max_tokens_k × 4,000` characters — **8,000 characters** at the initial budget.
+- Alarm: 90% of the hard ceiling — **7,200 characters** at the initial budget. Report it; the file
+  still ships.
 
 The budget is a constraint, not a target. A short file is a good file — padding a section to reach
 the ceiling is the failure this file exists to avoid.
+
+### Eviction priorities
+
+Assign one priority to every admitted entry that belongs to an eviction class. Higher numbers leave
+first:
+
+| Priority | Entry class |
+|---|---|
+| 5 | Runtime wiring. |
+| 4 | Traps whose default action fails noisily: the agent is told that something went wrong. |
+| 3 | Traps whose default action fails silently: work is lost, skipped, incomplete or wrong without a failure signal. |
+| 2 | Deliberate omissions. |
+| 1 | Command semantics. |
+
+`Shape` is not an eviction class. Keep it within its indicative spend by applying the admission and
+granularity rules strictly; do not turn it into an inventory.
+
+If one line contains facts from more than one class, split it into atomic entries before assigning a
+priority. Priority is a property of the entry, not of its source or section.
+
+### Enforcing the ceiling
+
+Render and measure the exact file, marker included. While it is above the hard ceiling, evict one
+whole entry at a time:
+
+1. Start at priority 5 and finish evicting that priority before touching priority 4; continue
+   through priorities 3, 2 and 1.
+2. Preserve every evicted entry verbatim in the candidate ledger. Add it to the marker's `dropped:`
+   count, render the marker again, and re-run `wc -c` after each eviction.
+3. Stop as soon as the complete rendered file is at or below the ceiling.
+
+Eviction removes entries. It never shortens, combines, paraphrases or compresses them to make them
+fit. Never evict a lower-numbered priority while any higher-numbered entry survives. If the file is
+still over budget after every priority 1–5 entry is gone, the run fails and the live file stays
+unchanged.
+
+The marker records only the final drop count. Entry names and priorities belong in the on-screen
+eviction report, never in the marker.
+
+### Increasing the budget
+
+A budget increase is eligible only when the file has first been brought within its current ceiling
+by the eviction procedure and at least one evicted entry has priority 1, 2 or 3.
+
+Propose an increase of exactly `0.5` in `max_tokens_k` — 2,000 characters — at a time. Re-admit
+evicted entries in reverse eviction order, without rewriting them, until the proposed ceiling is reached.
+The proposal enumerates every entry that the increment would admit, its priority, and the projected
+file size. An abstract increase without that list is not a proposal.
+
+The current file and marker stay unchanged while approval is pending. On approval, admit exactly
+the enumerated entries, increase `max_tokens_k` by `0.5`, update `dropped:`, render, and measure
+again. A further increment requires a new proposal after that write; never skip directly over a
+0.5 step.
 
 ## Line 1 — the provenance marker
 

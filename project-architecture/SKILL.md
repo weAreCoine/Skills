@@ -111,40 +111,55 @@ Apply, in this order, the rules in `references/produced-file.md`:
 4. The anchor rule — every entry carries its own verifiable anchor.
 
 Maintain one candidate ledger across all sources. For every candidate record its earliest source,
-its final entry text if kept, and its decision: surviving, local, or dropped with reason. Duplicate
-evidence from a later source corroborates the existing candidate; it is not a new candidate.
+its final entry text if kept, and its decision: admitted, local, or dropped with reason. For every
+admitted entry also record the eviction priority defined in `references/produced-file.md`, or
+`not-evictable` for Shape. Duplicate evidence from a later source corroborates the existing
+candidate; it is not a new candidate.
 
-Local candidates and all other rejected candidates count as dropped. Before writing, verify:
+Local candidates, rejected candidates and later budget evictions all count as dropped. Before every
+write, verify:
 
 ```
-candidate count = surviving entry count + dropped count
+candidate count = final surviving entry count + dropped count
 ```
 
 The right-hand `dropped count` is the marker's `dropped:` field. Every surviving entry must map to
 one named source in the ledger.
 
-## 5. Write the file
+## 5. Render a draft
 
-Create `.ai/` if it does not exist. Only now replace `.ai/PROJECT_ARCHITECTURE.md`, writing it
-exactly as `references/produced-file.md` specifies: marker on line 1, the defined sections in the
-defined order, sections with no material omitted and named in the marker.
+Render the complete candidate file without replacing `.ai/PROJECT_ARCHITECTURE.md`: marker on line
+1, the defined sections in the defined order, sections with no material omitted and named in the
+marker. The marker and separators are part of the measured draft.
 
-## 6. Measure
+## 6. Enforce the budget and write
 
-Run `wc -c` on the produced file and compare it against the ceiling and the alarm threshold in
-`references/produced-file.md`.
+Run `wc -c` on the draft. If it is above the ceiling, apply the eviction procedure in
+`references/produced-file.md`: update the ledger and `dropped:` count after each whole-entry
+eviction, render again, and remeasure. The draft must be within budget before the live file changes.
 
-On the foreign-file path, verify the dated archive's checksum first. If it differs from the recorded
-foreign-file checksum, the archive is not a recovery source: report the failed run and make no
-further writes. Then compare the current `.ai/CLAUDE.md` and `.ai/AGENTS.md` state and checksums with
-the snapshots from step 1; a mismatch is a failed run and stops further writes. Restore the live
-architecture file only from an archive whose checksum still matches the recorded original.
+If no eligible entry remains and the draft is still over the ceiling, STOP. Report the failed run
+and leave the live architecture file unchanged; compression is not a fallback.
+
+Before replacing a foreign file, verify the dated archive's checksum. If it differs from the
+recorded foreign-file checksum, the archive is not a recovery source: report the failed run and make
+no further writes. Also compare the current `.ai/CLAUDE.md` and `.ai/AGENTS.md` state and checksums
+with the snapshots from step 1; a mismatch is a failed run and stops further writes. Restore the
+live architecture file only from an archive whose checksum still matches the recorded original.
+
+Create `.ai/` if it does not exist, replace `.ai/PROJECT_ARCHITECTURE.md` with the passing draft,
+then run `wc -c` on the live file and verify the ceiling again. On the foreign-file path, also verify
+that `.ai/CLAUDE.md` and `.ai/AGENTS.md` still match their snapshots.
 
 | Result | What to do |
 |---|---|
 | Under the alarm threshold | Fine. Ship it. |
-| At or above the alarm, under the ceiling | Ship it, and report the alarm: the next run will have to evict. |
-| Above the ceiling | Do not ship it as is. Enforcing the budget by eviction is not implemented in this version. Report the overflow, give the size of each section, and **recommend** which entries to cut and why — one concrete proposal with its cost, not an open question. Write the file once the user has chosen. |
+| At or above the alarm, at or under the ceiling | Ship it and warn that further growth will cause more eviction. |
+| Above the ceiling | Failed enforcement. Restore the foreign file only from its verified archive; on the create path, remove the invalid output. |
+
+If any budget-evicted entry has priority 1–3, prepare the one-increment proposal defined in
+`references/produced-file.md`. Do not change the passing file or its marker until the user approves
+the enumerated entries.
 
 ## 7. Report and validate
 
@@ -154,6 +169,8 @@ On screen, and nowhere else:
 - On the foreign-file path: the archive path, proof that it matched the original before replacement,
   and a source mapping for every surviving entry from the candidate ledger.
 - Candidate accounting: total candidates, surviving entries, and dropped count.
+- Every budget eviction, with the entry text and its priority. These details stay on screen; the
+  marker carries only the count.
 - **Borderline** drop decisions only. Obvious drops are not submitted for validation — the point of
   the list is that it stays short enough to actually read.
 - **Local findings**, in full. They are written nowhere. Ask whether and where to persist them, and
